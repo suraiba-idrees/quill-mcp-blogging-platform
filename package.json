@@ -1,0 +1,38 @@
+{
+  "name": "quill-mcp-blogging-platform",
+  "version": "1.0.0",
+  "description": "Talk to your blog the way you talk to your code. Quill is a headless CMS built entirely around the Model Context Protocol (MCP), letting developers draft, publish, and track analytics using natural language straight from their IDE.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"Tests not configured yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suraiba-idrees/quill-mcp-blogging-platform.git"
+  },
+  "keywords": [
+    "mcp",
+    "blogging",
+    "typescript",
+    "hono",
+    "ai"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^17.4.2",
+    "hono": "^4.13.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
