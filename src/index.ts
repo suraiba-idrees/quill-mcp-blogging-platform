@@ -1,8 +1,33 @@
-/**
- * Quill application entry point.
- *
- * The single Node.js process will bootstrap the web application,
- * MCP server, and shared application services from here.
- */
+import http from "node:http";
 
-export {};
+const PORT = Number(process.env.PORT) || 3000;
+
+const server = http.createServer((req, res) => {
+  if (req.url === "/health" && req.method === "GET") {
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+    });
+
+    res.end(
+      JSON.stringify({
+        status: "ok",
+      }),
+    );
+
+    return;
+  }
+
+  res.writeHead(404, {
+    "Content-Type": "application/json",
+  });
+
+  res.end(
+    JSON.stringify({
+      error: "Not Found",
+    }),
+  );
+});
+
+server.listen(PORT, () => {
+  console.log(`Quill server running on http://localhost:${PORT}`);
+});
