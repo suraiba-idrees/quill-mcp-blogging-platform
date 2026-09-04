@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx src/database/migrate.ts",
     "test": "echo \"Tests not configured yet\""
   },
   "repository": {
