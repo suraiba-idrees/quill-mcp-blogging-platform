@@ -1,7 +1,7 @@
 /**
  * Quill application entry point.
  *
- * The single Node.js process will bootstrap the web application,
+ * The single Node.js process bootstraps the web application,
  * MCP server, and shared application services from here.
  */
 
@@ -13,6 +13,10 @@ import { runMigrations } from "./database/migrate.js";
 import { apiRoutes } from "./web/routes/index.js";
 import type { AuthedEnv } from "./web/types.js";
 
+import auth from "./auth/routes.js";
+import dashboard from "./web/dashboard/routes.js";
+import publicBlog from "./web/public-blog/routes.js";
+
 // Ensure schema is current on every boot — safe no-op if already applied.
 runMigrations();
 
@@ -23,6 +27,14 @@ app.use("/api/*", cors({ origin: corsOrigin }));
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 app.route("/api", apiRoutes);
+
+app.route("/auth", auth);
+app.route("/dashboard", dashboard);
+app.route("/blog", publicBlog);
+
+app.get("/", (c) => {
+  return c.redirect("/blog");
+});
 
 const port = Number(process.env.PORT ?? 3000);
 
