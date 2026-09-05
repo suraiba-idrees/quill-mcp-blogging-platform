@@ -4,7 +4,6 @@
  * The single Node.js process bootstraps the web application,
  * MCP server, and shared application services from here.
  */
-
 import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
