@@ -6,6 +6,10 @@ import {
   updatePost as updatePostRepo,
   deletePost as deletePostRepo,
   updatePostStatus as updatePostStatusRepo,
+  listPublishedPostsByUsername as listPublishedPostsByUsernameRepo,
+  findPublishedPostByUsernameAndSlug as findPublishedPostByUsernameAndSlugRepo,
+  listAllPublishedPostsWithAuthor as listAllPublishedPostsWithAuthorRepo,
+  type PublishedPostWithAuthor,
 } from "../repositories/post.repository.js";
 import {
   createPostSchema,
@@ -188,4 +192,17 @@ export function updateSeo(
 
   if (!updated) throw new ServiceError("NOT_FOUND", "Post not found");
   return updated;
+}
+export function listPublishedPostsByUsername(username: string): Post[] {
+  return listPublishedPostsByUsernameRepo(username);
+}
+
+export function getPublishedPostByUsernameAndSlug(username: string, slug: string): Post {
+  const post = findPublishedPostByUsernameAndSlugRepo(username, slug);
+  if (!post) throw new ServiceError("NOT_FOUND", "Post not found");
+  return post;
+}
+
+export function listAllPublishedPosts(): PublishedPostWithAuthor[] {
+  return listAllPublishedPostsWithAuthorRepo();
 }

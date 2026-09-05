@@ -141,3 +141,87 @@ export function getAnalyticsSummary(
 
   return { totalViews: totalRow.count, byPost: byPostRows };
 }
+
+export interface ReferrerBreakdown {
+  referrer: string;
+  views: number;
+}
+
+export function getReferrerBreakdown(
+  userId: string,
+  postId?: string,
+  range: DateRange = {}
+): ReferrerBreakdown[] {
+  const db = getDb();
+
+  const conditions = ["p.user_id = ?", "ae.referrer IS NOT NULL"];
+  const values: (string | number)[] = [userId];
+
+  if (postId) {
+    conditions.push("ae.post_id = ?");
+    values.push(postId);
+  }
+  if (range.rangeStart) {
+    conditions.push("ae.occurred_at >= ?");
+    values.push(range.rangeStart);
+  }
+  if (range.rangeEnd) {
+    conditions.push("ae.occurred_at <= ?");
+    values.push(range.rangeEnd);
+  }
+
+  const rows = db
+    .prepare(
+      `SELECT ae.referrer as referrer, COUNT(*) as views
+       FROM analytics_events ae
+       JOIN posts p ON p.id = ae.post_id
+       WHERE ${conditions.join(" AND ")}
+       GROUP BY ae.referrer
+       ORDER BY views DESC`
+    )
+    .all(...values) as unknown as ReferrerBreakdown[];
+
+  return rows;
+}
+
+export interface TopPost {
+  postId: string;
+  title: string;
+  views: number;
+}
+
+export function getTopPostsWithTitles(
+  userId: string,
+  range: DateRange = {},
+  limit = 10
+): TopPost[] {
+  const db = getDb();
+
+  const conditions = ["p.user_id = ?"];
+  const values: (string | number)[] = [userId];
+
+  if (range.rangeStart) {
+    conditions.push("ae.occurred_at >= ?");
+    values.push(range.rangeStart);
+  }
+  if (range.rangeEnd) {
+    conditions.push("ae.occurred_at <= ?");
+    values.push(range.rangeEnd);
+  }
+
+  values.push(limit);
+
+  const rows = db
+    .prepare(
+      `SELECT ae.post_id as postId, p.title as title, COUNT(*) as views
+       FROM analytics_events ae
+       JOIN posts p ON p.id = ae.post_id
+       WHERE ${conditions.join(" AND ")}
+       GROUP BY ae.post_id
+       ORDER BY views DESC
+       LIMIT ?`
+    )
+    .all(...values) as unknown as TopPost[];
+
+  return rows;
+}

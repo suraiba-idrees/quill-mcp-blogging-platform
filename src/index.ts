@@ -11,6 +11,8 @@ import { serve } from "@hono/node-server";
 import { runMigrations } from "./database/migrate.js";
 import { apiRoutes } from "./web/routes/index.js";
 import type { AuthedEnv } from "./web/types.js";
+import { createMcpHandler } from "./mcp/index.js";
+import { quillPostService, apiKeyResolver } from "./mcp/quill-adapter.js";
 
 import auth from "./auth/routes.js";
 import dashboard from "./web/dashboard/routes.js";
@@ -34,6 +36,13 @@ app.route("/blog", publicBlog);
 app.get("/", (c) => {
   return c.redirect("/blog");
 });
+
+const mcpHandler = createMcpHandler({
+  service: quillPostService,
+  apiKeyResolver,
+});
+
+app.all("/mcp", mcpHandler);
 
 const port = Number(process.env.PORT ?? 3000);
 

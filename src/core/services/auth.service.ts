@@ -5,6 +5,7 @@ import {
   findUserByEmail,
   findUserById,
   existsByEmail,
+  existsByUsername,
 } from "../repositories/user.repository.js";
 import type { User } from "../types/domain.js";
 import { ServiceError } from "./errors.js";
@@ -14,11 +15,12 @@ const SCRYPT_KEYLEN = 64;
 export interface PublicUser {
   id: string;
   email: string;
+  username: string;
   createdAt: string;
 }
 
 function toPublicUser(user: User): PublicUser {
-  return { id: user.id, email: user.email, createdAt: user.createdAt };
+  return { id: user.id, email: user.email, username: user.username, createdAt: user.createdAt };
 }
 
 function normalizeEmail(email: string): string {
@@ -34,56 +36,48 @@ function hashPassword(password: string): string {
 function verifyPassword(password: string, stored: string): boolean {
   const [salt, hashHex] = stored.split(":");
   if (!salt || !hashHex) return false;
-
   const derivedKey = scryptSync(password, salt, SCRYPT_KEYLEN);
   const storedBuffer = Buffer.from(hashHex, "hex");
-
   if (storedBuffer.length !== derivedKey.length) return false;
   return timingSafeEqual(derivedKey, storedBuffer);
 }
 
-// Computed once at module load so login() has a real hash to compare against
-// even when the email doesn't exist, this narrows (does not fully close)
-// the timing gap between "no such user" and "wrong password".
 const DUMMY_HASH = hashPassword("dummy-password-for-timing-safety");
 
-export function signup(input: { email: string; password: string }): PublicUser {
+export function signup(input: { email: string; username: string; password: string }): PublicUser {
   const parsed = signupSchema.safeParse(input);
   if (!parsed.success) {
-    throw new ServiceError(
-      "VALIDATION_ERROR",
-      parsed.error.issues[0]?.message ?? "Invalid signup input"
-    );
+    throw new ServiceError("VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid signup input");
   }
 
   const email = normalizeEmail(parsed.data.email);
+  const username = parsed.data.username;
 
   if (existsByEmail(email)) {
     throw new ServiceError("CONFLICT", "An account with this email already exists");
   }
+  if (existsByUsername(username)) {
+    throw new ServiceError("CONFLICT", "This username is already taken");
+  }
 
   const passwordHash = hashPassword(parsed.data.password);
-  const user = createUser({ email, passwordHash });
+  const user = createUser({ email, username, passwordHash });
   return toPublicUser(user);
 }
 
 export function login(input: { email: string; password: string }): PublicUser {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) {
-    throw new ServiceError(
-      "VALIDATION_ERROR",
-      parsed.error.issues[0]?.message ?? "Invalid login input"
-    );
+    throw new ServiceError("VALIDATION_ERROR", parsed.error.issues[0]?.message ?? "Invalid login input");
   }
 
   const email = normalizeEmail(parsed.data.email);
   const user = findUserByEmail(email);
 
   if (!user) {
-    verifyPassword(parsed.data.password, DUMMY_HASH); // constant-time-ish decoy
+    verifyPassword(parsed.data.password, DUMMY_HASH);
     throw new ServiceError("UNAUTHORIZED", "Invalid email or password");
   }
-
   if (!verifyPassword(parsed.data.password, user.passwordHash)) {
     throw new ServiceError("UNAUTHORIZED", "Invalid email or password");
   }

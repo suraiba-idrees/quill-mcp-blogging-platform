@@ -1,26 +1,32 @@
 import { Hono } from "hono";
-
+import { publicDirectoryPage, userBlogPage, publicPostPage } from "./pages.js";
 import {
-  publicBlogPage,
-  publicPostPage,
-} from "./pages.js";
+  listAllPublishedPosts,
+  listPublishedPostsByUsername,
+  getPublishedPostByUsernameAndSlug,
+} from "../../core/services/post.service.js";
 
 const publicBlog = new Hono();
 
 publicBlog.get("/", (c) => {
-  return c.html(publicBlogPage());
+  const posts = listAllPublishedPosts();
+  return c.html(publicDirectoryPage(posts));
 });
 
-publicBlog.get("/post/:slug", (c) => {
-  const slug = c.req.param("slug");
+publicBlog.get("/:username", (c) => {
+  const username = c.req.param("username");
+  const posts = listPublishedPostsByUsername(username);
+  return c.html(userBlogPage(username, posts));
+});
 
-  return c.html(
-    publicPostPage(
-      "Welcome to Quill",
-      "This is an example published post.\n\nThe real post content will be loaded from the database once the backend is implemented.",
-      "September 2, 2026",
-    ),
-  );
+publicBlog.get("/:username/:slug", (c) => {
+  const { username, slug } = c.req.param();
+  try {
+    const post = getPublishedPostByUsernameAndSlug(username, slug);
+    return c.html(publicPostPage(post, username));
+  } catch {
+    return c.notFound();
+  }
 });
 
 export default publicBlog;

@@ -147,3 +147,5 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+
+.mcp.json
