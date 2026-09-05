@@ -1,4 +1,8 @@
-export function loginPage(): string {
+import { escapeHtml } from "../web/lib/html-escape.js";
+export function loginPage(error?: string): string {
+  const errorHtml = error
+    ? `<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:6px;margin-bottom:18px;font-size:14px;">${error}</div>`
+    : "";
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -108,6 +112,7 @@ export function loginPage(): string {
             <p class="subtitle">Sign in to your account</p>
 
             <form method="POST" action="/auth/login">
+                          ${errorHtml}
               <div class="form-group">
                 <label for="email">Email</label>
                 <input
@@ -146,7 +151,10 @@ export function loginPage(): string {
   `;
 }
 
-export function signupPage(): string {
+export function signupPage(error?: string, username?: string): string {
+  const errorHtml = error
+    ? `<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:6px;margin-bottom:18px;font-size:14px;">${error}</div>`
+    : "";
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -256,6 +264,7 @@ export function signupPage(): string {
             <p class="subtitle">Create your account</p>
 
             <form method="POST" action="/auth/signup">
+                          ${errorHtml}
               <div class="form-group">
                 <label for="name">Name</label>
                 <input
@@ -264,6 +273,18 @@ export function signupPage(): string {
                   type="text"
                   required
                   placeholder="Your name"
+                />
+              </div>
+
+                            <div class="form-group">
+                <label for="username">Username</label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  placeholder="your-username"
+                  value="${escapeHtml(username ?? "")}"
                 />
               </div>
 

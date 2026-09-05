@@ -10,7 +10,16 @@ export class McpToolError extends Error {
 
 export function toMcpError(error: unknown): McpToolError {
   if (error instanceof McpToolError) return error;
-  if (error instanceof Error && error.name === 'NotFoundError') return new McpToolError('The requested post was not found.', 'NOT_FOUND');
-  if (error instanceof Error && error.name === 'ConflictError') return new McpToolError(error.message, 'CONFLICT');
+
+  // ServiceError uses a .code property, not distinct error.name values.
+  if (error && typeof error === "object" && "code" in error) {
+    const code = (error as { code: string }).code;
+    const message = error instanceof Error ? error.message : "An error occurred";
+    if (code === "NOT_FOUND") return new McpToolError(message, "NOT_FOUND");
+    if (code === "CONFLICT") return new McpToolError(message, "CONFLICT");
+    if (code === "VALIDATION_ERROR" || code === "BAD_REQUEST") return new McpToolError(message, "INVALID_ARGUMENT");
+    if (code === "UNAUTHORIZED") return new McpToolError(message, "UNAUTHENTICATED");
+  }
+
   return new McpToolError('The requested operation could not be completed.', 'INTERNAL');
 }

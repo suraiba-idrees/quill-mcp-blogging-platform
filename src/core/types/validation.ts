@@ -11,8 +11,17 @@ export const postStatusSchema = z.enum(["draft", "scheduled", "published"]);
 
 // --- Auth ---
 
+const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "Username must be at least 3 characters")
+  .max(30, "Username must be at most 30 characters")
+  .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, "Username can only contain lowercase letters, numbers, and hyphens");
+
 export const signupSchema = z.object({
   email: z.string().email(),
+  username: usernameSchema,
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 export type SignupInput = z.infer<typeof signupSchema>;

@@ -6,6 +6,7 @@ export type PostStatus = "draft" | "scheduled" | "published";
 export interface User {
   id: string;
   email: string;
+  username: string;
   passwordHash: string;
   createdAt: string;
 }
@@ -45,7 +46,8 @@ export interface AnalyticsEvent {
 
 export interface CreateUserInput {
   email: string;
-  password: string; // raw password; service layer hashes it before storage
+  username: string;
+  password: string;
 }
 
 export interface LoginInput {

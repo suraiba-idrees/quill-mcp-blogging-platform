@@ -39,6 +39,11 @@ const SELECT_COLUMNS = `
   meta_title, meta_description, published_at, scheduled_at,
   created_at, updated_at
 `;
+const JOIN_SELECT_COLUMNS = `
+  p.id, p.user_id, p.title, p.slug, p.content_md, p.status,
+  p.meta_title, p.meta_description, p.published_at, p.scheduled_at,
+  p.created_at, p.updated_at
+`;
 
 function toChangeCount(changes: number | bigint): number {
   return Number(changes);
@@ -66,18 +71,20 @@ export function createPost(input: CreatePostRepoInput): Post {
 
 export function findPostById(id: string, userId: string): Post | null {
   const db = getDb();
+  // Fixed: Cast through unknown
   const row = db
     .prepare(`SELECT ${SELECT_COLUMNS} FROM posts WHERE id = ? AND user_id = ?`)
-    .get(id, userId) as PostRow | undefined;
+    .get(id, userId) as unknown as PostRow | undefined;
 
   return row ? mapRow(row) : null;
 }
 
 export function findPostBySlug(userId: string, slug: string): Post | null {
   const db = getDb();
+  // Fixed: Cast through unknown
   const row = db
     .prepare(`SELECT ${SELECT_COLUMNS} FROM posts WHERE user_id = ? AND slug = ?`)
-    .get(userId, slug) as PostRow | undefined;
+    .get(userId, slug) as unknown as PostRow | undefined;
 
   return row ? mapRow(row) : null;
 }
@@ -159,8 +166,6 @@ export function updatePost(
   return findPostById(id, userId);
 }
 
-// Repository only writes what it's told — deciding *what* publishedAt/
-// scheduledAt should be (e.g. "now" on publish) is a service-layer rule.
 export interface UpdatePostStatusRepoInput {
   status: PostStatus;
   publishedAt?: string | null;
@@ -201,4 +206,50 @@ export function deletePost(id: string, userId: string): boolean {
   const db = getDb();
   const result = db.prepare(`DELETE FROM posts WHERE id = ? AND user_id = ?`).run(id, userId);
   return toChangeCount(result.changes) > 0;
+}
+
+export function listPublishedPostsByUsername(username: string): Post[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ${JOIN_SELECT_COLUMNS}
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       WHERE u.username = ? AND p.status = 'published'
+       ORDER BY p.published_at DESC`
+    )
+    .all(username) as unknown as PostRow[];
+  return rows.map(mapRow);
+}
+
+export function findPublishedPostByUsernameAndSlug(username: string, slug: string): Post | null {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT ${JOIN_SELECT_COLUMNS}
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       WHERE u.username = ? AND p.slug = ? AND p.status = 'published'
+       LIMIT 1`
+    )
+    .get(username, slug) as PostRow | undefined;
+  return row ? mapRow(row) : null;
+}
+
+export interface PublishedPostWithAuthor extends Post {
+  authorUsername: string;
+}
+
+export function listAllPublishedPostsWithAuthor(): PublishedPostWithAuthor[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT ${JOIN_SELECT_COLUMNS}, u.username as author_username
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       WHERE p.status = 'published'
+       ORDER BY p.published_at DESC`
+    )
+    .all() as unknown as (PostRow & { author_username: string })[];
+  return rows.map((row) => ({ ...mapRow(row), authorUsername: row.author_username }));
 }
