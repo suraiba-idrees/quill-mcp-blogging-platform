@@ -148,4 +148,4 @@ data/
 *.sqlite
 *.sqlite3
 
-echo ".mcp.json" >> .gitignore.mcp.json
+.mcp.json
